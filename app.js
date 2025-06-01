@@ -12,6 +12,9 @@ const livePreview = document.getElementById('live-preview');
 const songsDiv = document.getElementById('songs');
 const promptModal = document.getElementById('prompt-modal');
 const showAllChordsCheckbox = document.getElementById('showAllChords');
+const SUPABASE_URL = 'https://kktkzkypfeqipdmchowc.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrdGt6a3lwZmVxaXBkbWNob3djIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4MDE3MDMsImV4cCI6MjA2NDM3NzcwM30.wmpwoFgEWfHNYJJlH2nQxJxY0MhOa_FuKVSZi4KS3Yw';
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // --- Live preview updates as you type ---
 lyricsInput.addEventListener('input', () => {
