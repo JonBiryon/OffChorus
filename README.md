@@ -4,7 +4,7 @@ OffChorus is a simple, efficient, no-paywall web app for editing and viewing son
 
 ## Usage
 
-Open `https://jonbiryon.github.io/OffChorus/` in your browser.
+Open `[Main page](https://jonbiryon.github.io/OffChorus/)` in your browser.
 
 ## Features
 
