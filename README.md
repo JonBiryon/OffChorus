@@ -1,2 +1,15 @@
-# OffCourse
-Song lyrics and chords web-app
+# OffChorus
+
+OffChorus is a simple, efficient, no-paywall web app for editing and viewing song lyrics and chords, with real-time preview, Hebrew and English support, and chord fingering popups.
+
+## Usage
+
+Open `index.html` in your browser.
+
+## Features
+
+- Add/edit/save songs with chords
+- Supports English and Hebrew text
+- Click chords to show/hide fingering sprite
+
+...
