@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>OffChorus Editor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Music&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="options-bar">
+    <label>
+      <input type="checkbox" id="showAllChords">
+      Show All Chord Fingering
+    </label>
+  </div>
+  <div class="panel" style="margin-top:1.5em;">
+    <h2>OffChorus – Song Entry</h2>
+    <input id="title" type="text" placeholder="Song Title">
+    <textarea id="lyrics" rows="7" placeholder="Use ~Chord~word and | for bars"></textarea>
+    <div class="live-preview-label">Live Preview:</div>
+    <div class="score-preview" id="live-preview"></div>
+    <button id="submit-btn" onclick="submitSong()">Submit</button>
+  </div>
+  <div class="panel">
+    <h3>Saved Songs</h3>
+    <div id="songs"></div>
+  </div>
+  <div id="prompt-modal" style="display:none;"></div>
+  <script src="app.js"></script>
+</body>
+</html>
