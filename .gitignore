@@ -1,0 +1,7 @@
+# Ignore OS junk files
+.DS_Store
+Thumbs.db
+
+# Ignore npm or build artifacts if ever used
+node_modules/
+dist/
