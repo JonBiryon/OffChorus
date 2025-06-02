@@ -6,6 +6,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // --- State ---
 let songs = [];
 let editingIndex = null;
+let editingSongId = null;
 let activeChords = new Set();
 let showAllChords = false;
 
@@ -13,13 +14,16 @@ let showAllChords = false;
 const titleInput = document.getElementById('title');
 const lyricsInput = document.getElementById('lyrics');
 const submitBtn = document.getElementById('submit-btn');
+const updateBtn = document.getElementById('update-btn');
 const livePreview = document.getElementById('live-preview');
 const songsDiv = document.getElementById('songs');
 const promptModal = document.getElementById('prompt-modal');
 const showAllChordsCheckbox = document.getElementById('showAllChords');
+const statusDiv = document.getElementById('status-message');
 
 // --- On load: fetch songs ---
 fetchSongs();
+resetEditor();
 
 // --- Live preview updates as you type ---
 lyricsInput.addEventListener('input', () => {
@@ -46,6 +50,20 @@ function collectChords(text) {
    return set;
 }
 
+// --- Status message handler ---
+function setStatus(msg, good = true) {
+   statusDiv.textContent = msg;
+   statusDiv.style.color = good ? '#7f7' : '#fb6868';
+   statusDiv.style.fontWeight = 'bold';
+}
+
+// --- Reset editor state (after update or cancel) ---
+function resetEditor() {
+   editingIndex = null;
+   editingSongId = null;
+   updateBtn.style.display = 'none';
+}
+
 // --- Fetch songs from Supabase ---
 async function fetchSongs() {
    const { data, error } = await supabase
@@ -53,38 +71,26 @@ async function fetchSongs() {
       .select('*')
       .order('title', { ascending: true });
    if (error) {
-      alert('Failed to load songs: ' + error.message);
+      setStatus('Failed to load songs: ' + error.message, false);
       songs = [];
    } else {
       songs = data.map(row => ({ id: row.id, title: row.title, lyrics: row.lyrics }));
+      setStatus('');
    }
    renderSongs();
    livePreview.innerHTML = renderScore(lyricsInput.value);
+   resetEditor();
 }
 
-// --- Submit/Update song to Supabase ---
+// --- Submit/insert new song (never updates, prompts on duplicate) ---
 async function submitSong() {
    const title = titleInput.value.trim();
    const lyrics = lyricsInput.value.trim();
-   if (!title || !lyrics) return;
-   const existingIdx = songs.findIndex(song => song.title === title);
-
-   // Editing (update)
-   if (editingIndex !== null) {
-      const song = songs[editingIndex];
-      const { error } = await supabase
-         .from('songs')
-         .update({ title, lyrics })
-         .eq('id', song.id);
-      if (!error) {
-         await fetchSongs();
-         editingIndex = null;
-         submitBtn.textContent = "Submit";
-      } else {
-         alert('Error updating song: ' + error.message);
-      }
+   if (!title || !lyrics) {
+      setStatus("Title and lyrics are required.", false);
       return;
    }
+   const existingIdx = songs.findIndex(song => song.title === title);
 
    // Duplicate: prompt for action
    if (existingIdx !== -1) {
@@ -100,9 +106,10 @@ async function submitSong() {
                   .eq('id', id);
                if (!error) {
                   await fetchSongs();
+                  setStatus("Song overwritten.");
                   hidePromptBox();
                } else {
-                  alert('Error overwriting: ' + error.message);
+                  setStatus('Error overwriting: ' + error.message, false);
                }
             }},
             { label: "Cancel", action: () => { hidePromptBox(); } }
@@ -124,9 +131,10 @@ async function submitSong() {
                   .insert([{ title: newTitle.trim(), lyrics }]);
                if (!error) {
                   await fetchSongs();
+                  setStatus("Song added with new name.");
                   hidePromptBox();
                } else {
-                  alert('Error renaming: ' + error.message);
+                  setStatus('Error renaming: ' + error.message, false);
                }
             }
          }
@@ -140,8 +148,34 @@ async function submitSong() {
       .insert([{ title, lyrics }]);
    if (!error) {
       await fetchSongs();
+      setStatus("Song added successfully.");
    } else {
-      alert('Failed to add: ' + error.message);
+      setStatus('Failed to add: ' + error.message, false);
+   }
+}
+
+// --- Update currently edited song ---
+async function updateSong() {
+   if (editingIndex === null || !editingSongId) {
+      setStatus("No song selected for update.", false);
+      return;
+   }
+   const title = titleInput.value.trim();
+   const lyrics = lyricsInput.value.trim();
+   if (!title || !lyrics) {
+      setStatus("Title and lyrics are required.", false);
+      return;
+   }
+   const { error } = await supabase
+      .from('songs')
+      .update({ title, lyrics })
+      .eq('id', editingSongId);
+   if (!error) {
+      await fetchSongs();
+      setStatus("Song updated.");
+      resetEditor();
+   } else {
+      setStatus('Error updating song: ' + error.message, false);
    }
 }
 
@@ -193,7 +227,9 @@ function editSong(idx) {
    lyricsInput.value = song.lyrics;
    livePreview.innerHTML = renderScore(song.lyrics);
    editingIndex = idx;
-   submitBtn.textContent = "Update";
+   editingSongId = song.id;
+   updateBtn.style.display = '';
+   setStatus("Editing song: " + song.title);
    window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
@@ -207,9 +243,9 @@ async function deleteSong(idx) {
       .eq('id', id);
    if (!error) {
       await fetchSongs();
-      livePreview.innerHTML = renderScore(lyricsInput.value);
+      setStatus("Song deleted.");
    } else {
-      alert('Failed to delete: ' + error.message);
+      setStatus('Failed to delete: ' + error.message, false);
    }
 }
 
