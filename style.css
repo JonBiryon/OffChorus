@@ -279,3 +279,39 @@ button:hover {
 .prompt-box button {
    margin: 0 0.5em;
 }
+
+.song-entry {
+  padding: 0.8em 1em;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 0.3em;
+  margin-bottom: 0.5em;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.song-entry:hover,
+.song-entry:focus {
+  background: #333440;
+  outline: none;
+  transform: scale(1.01);
+}
+
+.song-title {
+  font-size: 1.05em;
+  font-weight: bold;
+  margin-top: 0.1em;
+}
+
+.song-artist {
+  font-size: 0.9em;
+  color: var(--subtext);
+  margin-bottom: 0.2em;
+}
+
+.scrollable-list {
+  max-height: 60vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}

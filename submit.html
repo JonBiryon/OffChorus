@@ -11,7 +11,7 @@
 
 <body>
    <div class="options-bar">
-      <button onclick="location.href='index.html'">← Back to Library</button>
+      <button onclick="location.href='index.html'">← Back to index</button>
       <label>
          <input type="checkbox" id="showAllChords">
          Show All Chord Fingering
@@ -20,18 +20,19 @@
 
    <div class="panel" style="margin-top:1.5em;">
       <h2>OffChorus – Song Entry</h2>
-      <input id="title" type="text" placeholder="Song Title">
+      <div style="display:flex; gap:0.7em; margin-bottom:1em;">
+         <input id="title" type="text" placeholder="Song Title" style="width:50%;">
+         <input id="artist" type="text" placeholder="Artist" style="width:30%;">
+         <input id="submitter" type="text" placeholder="Submitter" style="width:20%;">
+      </div>
       <textarea id="lyrics" rows="7" placeholder="Use ~Chord~word and | for bars"></textarea>
       <div class="live-preview-label">Live Preview:</div>
       <div class="score-preview" id="live-preview"></div>
       <div id="status-message" style="min-height:1.5em;margin-bottom:0.7em;"></div>
-      <button id="submit-btn" onclick="submitSong()">Submit</button>
-      <button id="update-btn" style="display:none;" onclick="updateSong()">Update</button>
-   </div>
-
-   <div class="panel">
-      <h3>Saved Songs</h3>
-      <div id="songs"></div>
+      <div style="display:flex; gap:0.7em;">
+         <button id="submit-btn" onclick="submitSong()" style="width:50%;">Submit</button>
+         <button id="update-btn" style="display:none; width:50%;" onclick="updateSong()">Update</button>
+      </div>
    </div>
 
    <div id="prompt-modal" style="display:none;"></div>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   <meta charset="UTF-8">
+   <title>Song View – OffChorus</title>
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+   <div class="options-bar">
+      <button onclick="location.href='index.html'">Back to index</button>
+      <button id="edit-btn">Edit</button>
+      <button id="delete-btn">Delete</button>
+      <label style="margin-left:auto">
+         <input type="checkbox" id="showAllChords"> Show All Chord Fingering
+      </label>
+   </div>
+
+   <div class="panel" style="margin-top:1.5em">
+      <h2 id="song-title"></h2>
+      <div class="song-artist" id="song-artist"></div>
+      <div class="score-preview" id="song-body"></div>
+   </div>
+
+   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+   <script src="common.js"></script>
+   <script src="view.js"></script>
+</body>
+
+</html>
