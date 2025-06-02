@@ -14,7 +14,6 @@ const showAllChordsBox = document.getElementById('showAllChords');
 
 let songs = [];
 let editingId = null;
-// Keep track of which chord overlays are toggled
 let shownChords = new Set();
 let showAllChords = false;
 
@@ -26,7 +25,6 @@ lyricsInput.addEventListener('input', () => {
 // -- "Show All Chord Fingering" option --
 showAllChordsBox.addEventListener('change', () => {
   showAllChords = showAllChordsBox.checked;
-  // update preview and song list
   livePreview.innerHTML = renderScore(lyricsInput.value, shownChords, showAllChords);
   renderSongs();
 });
@@ -52,7 +50,6 @@ function toggleChordOverlay(chord) {
   } else {
     shownChords.add(chord);
   }
-  // Refresh preview and all saved songs (so all visible chords update)
   livePreview.innerHTML = renderScore(lyricsInput.value, shownChords, showAllChords);
   renderSongs();
 }
@@ -67,7 +64,6 @@ async function submitSong() {
   const found = songs.find(song => song.title === title && song.id !== editingId);
 
   if (found && !editingId) {
-    // Modal: Overwrite, Rename, Cancel
     showPromptBox(
       `Song with title "<b>${escapeHTML(title)}</b>" already exists.`,
       [
@@ -110,10 +106,7 @@ async function submitSong() {
   } else {
     await addSong({ title, lyrics });
   }
-  titleInput.value = '';
-  lyricsInput.value = '';
-  livePreview.innerHTML = '';
-  shownChords.clear();
+  // Do not clear fields after submit!
   await reloadSongs();
 }
 
@@ -177,7 +170,6 @@ function editSong(id) {
   submitBtn.textContent = "Update";
   window.scrollTo({top: 0, behavior: 'smooth'});
 }
-window.editSong = editSong;
 
 // == Delete song with confirmation ==
 function deleteSongPrompt(id) {
@@ -185,7 +177,6 @@ function deleteSongPrompt(id) {
     deleteSong(id).then(reloadSongs);
   }
 }
-window.deleteSongPrompt = deleteSongPrompt;
 
 // == Modal prompt logic ==
 function showPromptBox(message, actions, renameCallback) {
@@ -286,14 +277,18 @@ function renderScore(text, shownChords, showAllChords) {
   }
   return html;
 }
-window.toggleChordOverlay = toggleChordOverlay;
 
-// == Reload song list from DB ==
-async function reloadSongs() {
-  songs = await fetchSongs();
-  renderSongs();
-}
+// == Expose handlers for HTML inline onclick ==
+window.submitSong = submitSong;
+window.deleteSongPrompt = deleteSongPrompt;
+window.editSong = editSong;
+window.toggleChordOverlay = toggleChordOverlay;
 
 // == Initial page load ==
 reloadSongs();
 livePreview.innerHTML = renderScore(lyricsInput.value, shownChords, showAllChords);
+
+async function reloadSongs() {
+  songs = await fetchSongs();
+  renderSongs();
+}
