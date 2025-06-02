@@ -1,294 +1,342 @@
-// == Supabase configuration ==
+// --- Supabase config (set these!) ---
 const SUPABASE_URL = 'https://kktkzkypfeqipdmchowc.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrdGt6a3lwZmVxaXBkbWNob3djIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4MDE3MDMsImV4cCI6MjA2NDM3NzcwM30.wmpwoFgEWfHNYJJlH2nQxJxY0MhOa_FuKVSZi4KS3Yw';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrdGt6a3lwZmVxaXBkbWNob3djIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4MDE3MDMsImV4cCI6MjA2NDM3NzcwM30.wmpwoFgEWfHNYJJlH2nQxJxY0MhOa_FuKVSZi4KS3Yw';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// == DOM elements ==
+// --- State ---
+let songs = [];
+let editingIndex = null;
+let activeChords = new Set();
+let showAllChords = false;
+
+// --- DOM elements ---
 const titleInput = document.getElementById('title');
 const lyricsInput = document.getElementById('lyrics');
 const submitBtn = document.getElementById('submit-btn');
 const livePreview = document.getElementById('live-preview');
 const songsDiv = document.getElementById('songs');
 const promptModal = document.getElementById('prompt-modal');
-const showAllChordsBox = document.getElementById('showAllChords');
+const showAllChordsCheckbox = document.getElementById('showAllChords');
 
-let songs = [];
-let editingId = null;
-let shownChords = new Set();
-let showAllChords = false;
+// --- On load: fetch songs ---
+fetchSongs();
 
-// -- Live preview updates --
+// --- Live preview updates as you type ---
 lyricsInput.addEventListener('input', () => {
-  livePreview.innerHTML = renderScore(lyricsInput.value, shownChords, showAllChords);
+   if (!showAllChords) activeChords.clear();
+   livePreview.innerHTML = renderScore(lyricsInput.value);
 });
 
-// -- "Show All Chord Fingering" option --
-showAllChordsBox.addEventListener('change', () => {
-  showAllChords = showAllChordsBox.checked;
-  livePreview.innerHTML = renderScore(lyricsInput.value, shownChords, showAllChords);
-  renderSongs();
+// --- Show all chords toggle ---
+showAllChordsCheckbox.addEventListener('change', function() {
+   showAllChords = this.checked;
+   if (showAllChords) {
+      activeChords = collectChords(lyricsInput.value);
+   } else {
+      activeChords.clear();
+   }
+   livePreview.innerHTML = renderScore(lyricsInput.value);
+   renderSongs();
 });
 
-// == Utility: escape HTML ==
-function escapeHTML(str) {
-  return str.replace(/[&<>"']/g, m => (
-    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]
-  ));
+// --- Utility: collect all chords in text as Set ---
+function collectChords(text) {
+   const set = new Set();
+   text.replace(/~([^~]+)~/g, (_, chord) => { set.add(chord); return ''; });
+   return set;
 }
 
-// == Detect if a string is RTL (Hebrew/Arabic) ==
-function isRTL(s) {
-  return /[\u0590-\u05FF\u0600-\u06FF]/.test(s);
-}
-
-// == Chord overlay logic ==
-function toggleChordOverlay(chord) {
-  chord = chord.trim();
-  if (!chord) return;
-  if (shownChords.has(chord)) {
-    shownChords.delete(chord);
-  } else {
-    shownChords.add(chord);
-  }
-  livePreview.innerHTML = renderScore(lyricsInput.value, shownChords, showAllChords);
-  renderSongs();
-}
-
-// == Song submit (add or update) ==
-async function submitSong() {
-  const title = titleInput.value.trim();
-  const lyrics = lyricsInput.value.trim();
-  if (!title || !lyrics) return;
-
-  // Check for duplicate title (except when editing this song)
-  const found = songs.find(song => song.title === title && song.id !== editingId);
-
-  if (found && !editingId) {
-    showPromptBox(
-      `Song with title "<b>${escapeHTML(title)}</b>" already exists.`,
-      [
-        { label: "Rename", isRename: true },
-        { label: "Overwrite", action: async () => {
-            await updateSong(found.id, { title, lyrics });
-            editingId = null;
-            submitBtn.textContent = "Submit";
-            hidePromptBox();
-            await reloadSongs();
-          }
-        },
-        { label: "Cancel", action: () => { hidePromptBox(); } }
-      ],
-      async (newTitle) => {
-        if (!newTitle.trim()) return;
-        if (songs.some(song => song.title === newTitle.trim())) {
-          showPromptBox(
-            `A song with "<b>${escapeHTML(newTitle.trim())}</b>" also exists. Try another name.`,
-            [
-              { label: "Rename", isRename: true },
-              { label: "Cancel", action: () => { hidePromptBox(); } }
-            ],
-            arguments.callee
-          );
-        } else {
-          await addSong({ title: newTitle.trim(), lyrics });
-          hidePromptBox();
-          await reloadSongs();
-        }
-      }
-    );
-    return;
-  }
-
-  if (editingId) {
-    await updateSong(editingId, { title, lyrics });
-    editingId = null;
-    submitBtn.textContent = "Submit";
-  } else {
-    await addSong({ title, lyrics });
-  }
-  // Do not clear fields after submit!
-  await reloadSongs();
-}
-
-// == CRUD helpers ==
+// --- Fetch songs from Supabase ---
 async function fetchSongs() {
-  const { data, error } = await supabase
-    .from('songs')
-    .select('*')
-    .order('title', { ascending: true });
-  if (error) {
-    alert("Failed to load songs: " + error.message);
-    return [];
-  }
-  return data || [];
-}
-async function addSong(song) {
-  const { error } = await supabase
-    .from('songs')
-    .insert([song]);
-  if (error) alert("Failed to add song: " + error.message);
-}
-async function updateSong(id, fields) {
-  const { error } = await supabase
-    .from('songs')
-    .update(fields)
-    .eq('id', id);
-  if (error) alert("Failed to update song: " + error.message);
-}
-async function deleteSong(id) {
-  const { error } = await supabase
-    .from('songs')
-    .delete()
-    .eq('id', id);
-  if (error) alert("Failed to delete song: " + error.message);
+   const { data, error } = await supabase
+      .from('songs')
+      .select('*')
+      .order('title', { ascending: true });
+   if (error) {
+      alert('Failed to load songs: ' + error.message);
+      songs = [];
+   } else {
+      songs = data.map(row => ({ id: row.id, title: row.title, lyrics: row.lyrics }));
+   }
+   renderSongs();
+   livePreview.innerHTML = renderScore(lyricsInput.value);
 }
 
-// == Render all saved songs in the UI ==
-function renderSongs() {
-  songsDiv.innerHTML = '';
-  songs.forEach(song => {
-    const el = document.createElement('div');
-    el.className = 'song';
-    el.innerHTML =
-      `<b>${escapeHTML(song.title)}</b><br>${renderScore(song.lyrics, shownChords, showAllChords)}
-       <div class="actions">
-         <button onclick="editSong('${song.id}')">Edit</button>
-         <button onclick="deleteSongPrompt('${song.id}')">Delete</button>
-       </div>`;
-    songsDiv.appendChild(el);
-  });
+// --- Submit/Update song to Supabase ---
+async function submitSong() {
+   const title = titleInput.value.trim();
+   const lyrics = lyricsInput.value.trim();
+   if (!title || !lyrics) return;
+   const existingIdx = songs.findIndex(song => song.title === title);
+
+   // Editing (update)
+   if (editingIndex !== null) {
+      const song = songs[editingIndex];
+      const { error } = await supabase
+         .from('songs')
+         .update({ title, lyrics })
+         .eq('id', song.id);
+      if (!error) {
+         await fetchSongs();
+         editingIndex = null;
+         submitBtn.textContent = "Submit";
+      } else {
+         alert('Error updating song: ' + error.message);
+      }
+      return;
+   }
+
+   // Duplicate: prompt for action
+   if (existingIdx !== -1) {
+      showPromptBox(
+         `Song with title "<b>${escapeHTML(title)}</b>" already exists.`,
+         [
+            { label: "Rename", isRename: true },
+            { label: "Overwrite", action: async () => {
+               const id = songs[existingIdx].id;
+               const { error } = await supabase
+                  .from('songs')
+                  .update({ title, lyrics })
+                  .eq('id', id);
+               if (!error) {
+                  await fetchSongs();
+                  hidePromptBox();
+               } else {
+                  alert('Error overwriting: ' + error.message);
+               }
+            }},
+            { label: "Cancel", action: () => { hidePromptBox(); } }
+         ],
+         async (newTitle) => {
+            if (!newTitle.trim()) return;
+            if (songs.some(song => song.title === newTitle.trim())) {
+               showPromptBox(
+                  `A song with "<b>${escapeHTML(newTitle.trim())}</b>" also exists. Try another name.`,
+                  [
+                     { label: "Rename", isRename: true },
+                     { label: "Cancel", action: () => { hidePromptBox(); } }
+                  ],
+                  arguments.callee
+               );
+            } else {
+               const { error } = await supabase
+                  .from('songs')
+                  .insert([{ title: newTitle.trim(), lyrics }]);
+               if (!error) {
+                  await fetchSongs();
+                  hidePromptBox();
+               } else {
+                  alert('Error renaming: ' + error.message);
+               }
+            }
+         }
+      );
+      return;
+   }
+
+   // New song (insert)
+   const { error } = await supabase
+      .from('songs')
+      .insert([{ title, lyrics }]);
+   if (!error) {
+      await fetchSongs();
+   } else {
+      alert('Failed to add: ' + error.message);
+   }
 }
 
-// == Edit song ==
-function editSong(id) {
-  const song = songs.find(s => s.id === id);
-  if (!song) return;
-  titleInput.value = song.title;
-  lyricsInput.value = song.lyrics;
-  livePreview.innerHTML = renderScore(song.lyrics, shownChords, showAllChords);
-  editingId = id;
-  submitBtn.textContent = "Update";
-  window.scrollTo({top: 0, behavior: 'smooth'});
+// --- Escape HTML (for safety) ---
+function escapeHTML(str) {
+   return str.replace(/[&<>"']/g, function(m) {
+      return ({
+         '&': '&amp;', '<': '&lt;', '>': '&gt;',
+         '"': '&quot;', "'": '&#39;'
+      })[m];
+   });
 }
 
-// == Delete song with confirmation ==
-function deleteSongPrompt(id) {
-  if (confirm("Delete this song?")) {
-    deleteSong(id).then(reloadSongs);
-  }
-}
-
-// == Modal prompt logic ==
+// --- Overwrite/Rename/Cancel prompt modal ---
 function showPromptBox(message, actions, renameCallback) {
-  let html = `<div class="prompt-modal"><div class="prompt-box">${message}<div>`;
-  let renameActive = actions.some(a => a.isRename);
-  if (renameActive) {
-    html += `<input id="prompt-rename" type="text" value="${escapeHTML(titleInput.value)}" placeholder="New Title">`;
-  }
-  html += `<div style="margin-top:1em;">`;
-  actions.forEach((action, i) => {
-    if (action.isRename) {
-      html += `<button onclick="onRenamePrompt()">Rename</button>`;
-    } else {
-      html += `<button onclick="window._promptActions[${i}]()">${action.label}</button>`;
-    }
-  });
-  html += `</div></div></div>`;
-  promptModal.innerHTML = html;
-  promptModal.style.display = 'flex';
-  window._promptActions = actions.map(a => a.action);
-  window.onRenamePrompt = () => {
-    let newTitle = document.getElementById('prompt-rename').value;
-    if (renameCallback) renameCallback(newTitle);
-  };
+   let html = `<div class="prompt-modal"><div class="prompt-box">${message}<div>`;
+   let renameActive = actions.some(a => a.isRename);
+   if (renameActive) {
+      html += `<input id="prompt-rename" type="text" value="${escapeHTML(titleInput.value)}" placeholder="New Title">`;
+   }
+   html += `<div style="margin-top:1em;">`;
+   actions.forEach((action, i) => {
+      if (action.isRename) {
+         html += `<button onclick="onRenamePrompt()">Rename</button>`;
+      } else {
+         html += `<button onclick="window._promptActions[${i}]()">${action.label}</button>`;
+      }
+   });
+   html += `</div></div></div>`;
+   promptModal.innerHTML = html;
+   promptModal.style.display = 'flex';
+   window._promptActions = actions.map(a => a.action);
+   window.onRenamePrompt = () => {
+      let newTitle = document.getElementById('prompt-rename').value;
+      if (renameCallback) renameCallback(newTitle);
+   };
 }
 function hidePromptBox() {
-  promptModal.innerHTML = '';
-  promptModal.style.display = 'none';
-  window._promptActions = null;
-  window.onRenamePrompt = null;
+   promptModal.innerHTML = '';
+   promptModal.style.display = 'none';
+   window._promptActions = null;
+   window.onRenamePrompt = null;
 }
 
-// == Main song parser & renderer ==
-function renderScore(text, shownChords, showAllChords) {
-  let lines = text.split(/\r?\n/);
-  let html = '';
-  for (let line of lines) {
-    // Parse and render time signature (including mid-line!)
-    let blocks = [];
-    let i = 0;
-    while (i < line.length) {
-      // Bar
-      if (line[i] === '|') {
-        blocks.push('<span class="bar-marker"></span>');
-        i++;
-        continue;
-      }
-      // Time signature (common/cut/numeric)
-      if (line.slice(i).startsWith('_TS:C/2_')) {
-        blocks.push('<span class="ts cuttime" title="Cut Time">&#x1D135;</span>');
-        i += 8;
-        continue;
-      }
-      if (line.slice(i).startsWith('_TS:C_')) {
-        blocks.push('<span class="ts commontime" title="Common Time">&#x1D134;</span>');
-        i += 6;
-        continue;
-      }
-      let tsMatch = line.slice(i).match(/^_TS:([0-9]+)\/([0-9]+)_/);
-      if (tsMatch) {
-        let num = tsMatch[1], den = tsMatch[2];
-        blocks.push(`<span class="ts"><span>${escapeHTML(num)}</span><span>${escapeHTML(den)}</span></span>`);
-        i += tsMatch[0].length;
-        continue;
-      }
-      // Chord parsing (~Chord~)
-      if (line[i] === '~') {
-        let j = i+1;
-        while (j < line.length && line[j] !== '~') j++;
-        let chord = line.substring(i+1, j);
-        i = j+1;
-        let lyricChar = '';
-        if (i < line.length && !['_','~','|'].includes(line[i])) {
-          lyricChar = line[i];
-          i++;
-        }
-        // Chord block (bold, button, overlay)
-        let displayOverlay = showAllChords || shownChords.has(chord);
-        blocks.push(
-          `<span class="chord-block">` +
-            `<button class="chord-btn" type="button" onclick="toggleChordOverlay('${escapeHTML(chord)}')">${escapeHTML(chord)}</button>` +
-            (displayOverlay ? `<span class="chord-sprite">{${escapeHTML(chord)}}</span>` : '') +
-            `<span style="height:1em;line-height:1em;">${escapeHTML(lyricChar)}</span>` +
-          `</span>`
-        );
-        continue;
-      }
-      // Regular lyric
-      blocks.push(`<span class="block"><span style="height:1em;line-height:1em;"></span><span style="height:1em;line-height:1em;">${escapeHTML(line[i])}</span></span>`);
-      i++;
-    }
-    // RTL/LTR
-    const rtl = isRTL(line);
-    html += `<div class="score-block">` +
-      `<div class="blocks" dir="${rtl ? "rtl" : "ltr"}" style="direction:${rtl ? "rtl" : "ltr"};text-align:${rtl ? "right" : "left"};">` +
-      (rtl ? blocks.reverse().join('') : blocks.join('')) +
-      `</div></div>`;
-  }
-  return html;
+// --- Edit existing song ---
+function editSong(idx) {
+   const song = songs[idx];
+   titleInput.value = song.title;
+   lyricsInput.value = song.lyrics;
+   livePreview.innerHTML = renderScore(song.lyrics);
+   editingIndex = idx;
+   submitBtn.textContent = "Update";
+   window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
-// == Expose handlers for HTML inline onclick ==
-window.submitSong = submitSong;
-window.deleteSongPrompt = deleteSongPrompt;
+// --- Delete song from Supabase ---
+async function deleteSong(idx) {
+   if (!confirm("Delete this song?")) return;
+   const id = songs[idx].id;
+   const { error } = await supabase
+      .from('songs')
+      .delete()
+      .eq('id', id);
+   if (!error) {
+      await fetchSongs();
+      livePreview.innerHTML = renderScore(lyricsInput.value);
+   } else {
+      alert('Failed to delete: ' + error.message);
+   }
+}
+
+// --- Render all saved songs ---
+function renderSongs() {
+   songsDiv.innerHTML = '';
+   songs.forEach((song, idx) => {
+      const el = document.createElement('div');
+      el.className = 'song';
+      el.innerHTML =
+         `<b>${escapeHTML(song.title)}</b><br>${renderScore(song.lyrics)}
+         <div class="actions">
+            <button onclick="editSong(${idx})">Edit</button>
+            <button onclick="deleteSong(${idx})">Delete</button>
+         </div>`;
+      songsDiv.appendChild(el);
+   });
+}
+
+// --- Utility: check for RTL characters ---
+// Always strip HTML tags before checking direction.
+function isRTL(s) {
+   return /[\u0590-\u05FF\u0600-\u06FF]/.test(s);
+}
+
+// --- Replace time signatures inline ---
+function replaceTimeSignatures(str) {
+   return str.replace(/_TS:(C\/2|C|(\d+)\/(\d+))_/g, (match, group1, num, den) => {
+      if (group1 === 'C') {
+         return '<span class="ts commontime" title="Common Time">&#x1D134;</span>';
+      } else if (group1 === 'C/2') {
+         return '<span class="ts cuttime" title="Cut Time">&#x1D135;</span>';
+      } else if (num && den) {
+         return `<span class="ts"><span>${num}</span><span>${den}</span></span>`;
+      } else {
+         return match;
+      }
+   });
+}
+
+// --- Main lyric/chord/timesig/bar renderer ---
+// RTL/LTR handled only by direction, not block reversal.
+function renderScore(text) {
+   let lines = text.split(/\r?\n/);
+   let html = '';
+   lines.forEach((line, lineIdx) => {
+      line = replaceTimeSignatures(line);
+
+      // Build blocks (chord/lyric/bar/html/char)
+      let blocks = [];
+      let i = 0;
+      while (i < line.length) {
+         if (line[i] === '<') {
+            let tagEnd = line.indexOf('</span>', i);
+            if (tagEnd !== -1) {
+               let tag = line.slice(i, tagEnd + 7);
+               blocks.push({ type: 'html', html: tag });
+               i = tagEnd + 7;
+               continue;
+            }
+         }
+         if (line[i] === '|') {
+            blocks.push({ type: 'bar' });
+            i++;
+            continue;
+         }
+         if (line[i] === '~') {
+            let j = i+1;
+            while (j < line.length && line[j] !== '~') j++;
+            let chord = line.substring(i+1, j);
+            i = j+1;
+            let lyricChar = '';
+            if (i < line.length && line[i] !== '|' && line[i] !== '~') {
+               lyricChar = line[i];
+               i++;
+            }
+            blocks.push({
+               type: 'chord',
+               chord: chord,
+               lyric: lyricChar
+            });
+         } else {
+            blocks.push({ type: 'char', char: line[i] });
+            i++;
+         }
+      }
+
+      // Determine RTL/LTR (strip HTML tags for direction check)
+      const rtl = isRTL(line.replace(/<[^>]*>/g, ""));
+
+      // Convert blocks to HTML
+      let blocksHTML = blocks.map((block) => {
+         if (block.type === 'chord') {
+            let showSprite = showAllChords || activeChords.has(block.chord);
+            return `<span class="block chord-block">
+               <button class="chord-btn" tabindex="0" onclick="onChordClick('${block.chord.replace(/'/g,"\\'")}')">${escapeHTML(block.chord)}</button>
+               ${showSprite ? `<span class="chord-sprite">{${escapeHTML(block.chord)}}</span>` : ''}
+               <span style="height:1em;line-height:1em;">${escapeHTML(block.lyric)}</span>
+            </span>`;
+         } else if (block.type === 'bar') {
+            return '<span class="bar-marker"></span>';
+         } else if (block.type === 'html') {
+            return block.html;
+         } else if (block.type === 'char') {
+            return `<span class="block"><span style="height:1em;line-height:1em;"></span><span style="height:1em;line-height:1em;">${escapeHTML(block.char)}</span></span>`;
+         }
+         return '';
+      });
+
+      html += `<div class="score-block">
+         <div class="blocks" dir="${rtl ? "rtl" : "ltr"}" style="direction:${rtl ? "rtl" : "ltr"};text-align:${rtl ? "right" : "left"};">
+            ${blocksHTML.join('')}
+         </div>
+      </div>`;
+   });
+   return html;
+}
+
+// --- Chord click: toggle all chords of that name ---
+window.onChordClick = function(chord) {
+   if (showAllChords) return;
+   if (activeChords.has(chord)) activeChords.delete(chord);
+   else activeChords.add(chord);
+   livePreview.innerHTML = renderScore(lyricsInput.value);
+   renderSongs();
+};
+
+// --- Expose edit/delete for inline handlers ---
 window.editSong = editSong;
-window.toggleChordOverlay = toggleChordOverlay;
-
-// == Initial page load ==
-reloadSongs();
-livePreview.innerHTML = renderScore(lyricsInput.value, shownChords, showAllChords);
-
-async function reloadSongs() {
-  songs = await fetchSongs();
-  renderSongs();
-}
+window.deleteSong = deleteSong;
