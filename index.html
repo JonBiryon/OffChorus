@@ -1,64 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <title>OffChorus Library</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
-  <style>
-    .scrollable-list {
-      max-height: 60vh;
-      overflow-y: auto;
-      padding-right: 4px;
-    }
-    .song-entry {
-      padding: 0.3em 0.6em;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 0.2em;
-      margin-bottom: 0.2em;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .song-entry:hover,
-    .song-entry:focus {
-      background: #333440;
-      outline: none;
-    }
-    .song-title {
-      font-size: 1em;
-      font-weight: bold;
-    }
-    .song-artist {
-      font-size: 0.85em;
-      color: var(--subtext);
-      margin-bottom: 0.1em;
-    }
-  </style>
+   <meta charset="UTF-8">
+   <title>OffChorus Library</title>
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <div class="options-bar">
-    <button onclick="location.href='submit.html'">+ Submit new song</button>
-    <button onclick="location.href='feedback.html'">Feedback</button>
-    <button onclick="location.href='preferences.html'">Preferences</button>
-  </div>
+   <div class="options-bar">
+      <a href="song.html" class="button-link">+ Submit new song</a>
+      <a href="feedback.html" class="button-link">Feedback</a>
+      <a href="preferences.html" class="button-link">Preferences</a>
+   </div>
 
-  <div class="panel">
-    <h2>OffChorus Library</h2>
-    <div style="display:flex; gap:0.7em; margin-bottom:1em;">
-      <input id="filter-title" type="text" placeholder="Filter song title" style="width:50%;">
-      <input id="filter-artist" type="text" placeholder="Filter artist" style="width:30%;">
-      <input id="filter-submitter" type="text" placeholder="Filter submitter" style="width:20%;">
-    </div>
-    <div style="margin-bottom:1em;">
-      <input id="filter-lyrics" type="text" placeholder="Filter by lyrics" style="width:100%;">
-    </div>
+   <div class="panel">
+      <h2>OffChorus Library</h2>
 
-    <div id="song-list" class="scrollable-list"></div>
-  </div>
+      <div style="display:flex; gap:0.7em; margin-bottom:1em;">
+         <input id="filter-title" type="text" placeholder="Filter song title" style="width:50%;">
+         <input id="filter-artist" type="text" placeholder="Filter artist" style="width:30%;">
+         <input id="filter-submitter" type="text" placeholder="Filter submitter" style="width:20%;">
+      </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="common.js"></script>
-  <script src="index.js"></script>
+      <input id="filter-lyrics" type="text" placeholder="Filter by lyrics" style="width:100%; margin-bottom:1em;">
+
+      <div id="song-list" class="song-list"></div>
+   </div>
+
+   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+   <script src="common.js"></script>
+   <script src="index.js"></script>
 </body>
+
 </html>

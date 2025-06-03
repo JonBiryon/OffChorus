@@ -60,7 +60,7 @@ h3 {
    box-shadow: 0 2px 12px #000a;
 }
 
-.song {
+/* .song {
    background: var(--panel);
    border: 1px solid var(--border);
    margin-bottom: 1.1em;
@@ -74,7 +74,7 @@ h3 {
 
 .actions button {
    margin-right: 0.6em;
-}
+} */
 
 input[type="text"],
 textarea {
@@ -225,9 +225,7 @@ button:hover {
    position: absolute;
    left: 50%;
    bottom: 100%;
-   /* Attach sprite just above the chord */
    transform: translateX(-50%) translateY(-0.25em);
-   /* Optional: nudge up for gap */
    font-size: 1.03em;
    color: #fff;
    background: #333a;
@@ -281,37 +279,57 @@ button:hover {
 }
 
 .song-entry {
-  padding: 0.8em 1em;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 0.3em;
-  margin-bottom: 0.5em;
-  cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
+   padding: 0.3em 0.6em;
+   background: var(--panel);
+   border: 1px solid var(--border);
+   border-radius: 0.2em;
+   margin-bottom: 0.2em;
+   cursor: pointer;
+   transition: background 0.15s;
 }
 
 .song-entry:hover,
 .song-entry:focus {
-  background: #333440;
-  outline: none;
-  transform: scale(1.01);
+   background: #333440;
+   outline: none;
 }
 
 .song-title {
-  font-size: 1.05em;
-  font-weight: bold;
-  margin-top: 0.1em;
+   font-size: 1em;
+   font-weight: bold;
 }
 
 .song-artist {
-  font-size: 0.9em;
-  color: var(--subtext);
-  margin-bottom: 0.2em;
+   font-size: 0.85em;
+   color: var(--subtext);
+   margin-bottom: 0.1em;
 }
 
 .scrollable-list {
-  max-height: 60vh;
-  overflow-y: auto;
-  overflow-x: hidden;
-  box-sizing: border-box;
+   max-height: 60vh;
+   overflow-y: auto;
+   padding-right: 4px;
+}
+
+a.button-link {
+   display: inline-block;
+   text-decoration: none;
+   background: var(--button-bg);
+   color: var(--text);
+   border: 1px solid var(--border);
+   border-radius: 3px;
+   font-size: 1em;
+   padding: 0.4em 1.1em;
+   cursor: pointer;
+   transition: background 0.13s;
+}
+
+a.button-link:hover {
+   background: var(--button-hover);
+}
+
+a.song-entry {
+   color: inherit;
+   text-decoration: none;
+   display: block;
 }

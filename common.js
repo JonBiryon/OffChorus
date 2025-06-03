@@ -37,83 +37,7 @@ function replaceTimeSignatures(str) {
 
 function stripCodes(text) {
    return text.replace(/~[^~]*~/g, '').replace(/_TS:[^_]*_/g, '');
-}
-
-function collectChords(text) {
-   const set = new Set();
-   text.replace(/~([^~]+)~/g, (_, chord) => { set.add(chord); return ''; });
-   return set;
-}
-
-function renderScore(text, showAllChords, activeChords) {
-   const lines = text.split(/\r?\n/);
-   let html = '';
-
-   for (const line of lines) {
-      const isRtl = isRTL(line.replace(/<[^>]*>/g, ""));
-      const lineWithTS = replaceTimeSignatures(line);
-
-      const blocks = [];
-      let i = 0;
-      while (i < lineWithTS.length) {
-         if (lineWithTS[i] === '<') {
-            const tagEnd = lineWithTS.indexOf('</span>', i);
-            if (tagEnd !== -1) {
-               const tag = lineWithTS.slice(i, tagEnd + 7);
-               blocks.push({ type: 'html', html: tag });
-               i = tagEnd + 7;
-               continue;
-            }
-         }
-         if (lineWithTS[i] === '|') {
-            blocks.push({ type: 'bar' });
-            i++;
-            continue;
-         }
-         if (lineWithTS[i] === '~') {
-            let j = i+1;
-            while (j < lineWithTS.length && lineWithTS[j] !== '~') j++;
-            const chord = lineWithTS.substring(i+1, j);
-            i = j+1;
-            let lyricChar = '';
-            if (i < lineWithTS.length && lineWithTS[i] !== '|' && lineWithTS[i] !== '~') {
-               lyricChar = lineWithTS[i];
-               i++;
-            }
-            blocks.push({ type: 'chord', chord, lyric: lyricChar });
-         } else {
-            blocks.push({ type: 'char', char: lineWithTS[i] });
-            i++;
-         }
-      }
-
-      const blocksHTML = blocks.map((block) => {
-         if (block.type === 'chord') {
-            const showSprite = showAllChords || activeChords.has(block.chord);
-            return `<span class="block chord-block">
-               <button class="chord-btn" tabindex="0" onclick="onChordClick('${block.chord.replace(/'/g,"\\'")}')">${escapeHTML(block.chord)}</button>
-               ${showSprite ? `<span class="chord-sprite">{${escapeHTML(block.chord)}}</span>` : ''}
-               <span style="height:1em;line-height:1em;">${escapeHTML(block.lyric)}</span>
-            </span>`;
-         } else if (block.type === 'bar') {
-            return '<span class="bar-marker"></span>';
-         } else if (block.type === 'html') {
-            return block.html;
-         } else if (block.type === 'char') {
-            return `<span class="block"><span style="height:1em;line-height:1em;"></span><span style="height:1em;line-height:1em;">${escapeHTML(block.char)}</span></span>`;
-         }
-         return '';
-      }).join('');
-
-      html += `<div class="score-block">
-         <div class="blocks" dir="${isRtl ? 'rtl' : 'ltr'}" style="direction:${isRtl ? 'rtl' : 'ltr'};text-align:${isRtl ? 'right' : 'left'};">
-            ${blocksHTML}
-         </div>
-      </div>`;
-   }
-
-   return html;
-}
+} // used for lyric search
 
 // --- Export helpers ---
 window.OffChorus = {
@@ -121,7 +45,5 @@ window.OffChorus = {
    escapeHTML,
    isRTL,
    replaceTimeSignatures,
-   stripCodes,
-   collectChords,
-   renderScore
+   stripCodes
 };

@@ -45,12 +45,9 @@ function renderSongs() {
          if (!cleanLyrics.includes(lyricsQuery)) return;
       }
 
-      const entry = document.createElement('div');
+      const entry = document.createElement('a');
       entry.className = 'song-entry';
-      entry.tabIndex = 0;
-      entry.onclick = () => {
-         location.href = `view.html?id=${song.id}`;
-      };
+      entry.href = `song.html?id=${encodeURIComponent(song.id)}`;
       entry.innerHTML = `
          <div class="song-artist">${escapeHTML(song.artist || '')}</div>
          <div class="song-title">${escapeHTML(song.title)}</div>
