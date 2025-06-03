@@ -1,0 +1,24 @@
+=== OffChorus To-Do List ===
+
+Live Preview Enhancements:
+1. Debounce renderScore by ~200ms after last input (no constant timer when idle).
+2. Add toggle to enable/disable live preview (persist using localStorage).
+
+Form Validation:
+3. On submit failure, highlight empty fields (e.g., red border).
+4. Track field changes; enable "Update" only when changes are detected.
+5. Add unsaved changes warning on navigation away during edit mode.
+
+Metadata Display:
+6. Show full timestamp of song creation (e.g., near submitter name).
+
+Song Notes Handling:
+7. Add public notes section to each song.
+   - Option A: Separate field in DB (preferred for performance).
+   - Option B: Inline with backtick (`note`) syntax.
+
+Song Viewing Modes:
+8. Add view-mode toggle to song view page (full / chords only / lyrics only / performance).
+
+Index Navigation:
+9. Clicking artist or submitter name should open index page with filter pre-filled and applied.

@@ -23,7 +23,7 @@ if (!songId) {
 async function fetchSong(id) {
   const { data, error } = await OffChorus.supabase
     .from('songs')
-    .select('id, title, artist, lyrics, submitter')
+    .select('id, title, artist, lyrics')
     .eq('id', id)
     .single();
 
@@ -40,8 +40,7 @@ async function fetchSong(id) {
   renderLyrics();
 
   editBtn.onclick = () => {
-    localStorage.setItem('offchorus_edit_song', JSON.stringify(data));
-    location.href = `submit.html?edit=1`;
+    location.href = `submit.html?edit=${encodeURIComponent(data.id)}`;
   };
 
   deleteBtn.onclick = async () => {
