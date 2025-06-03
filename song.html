@@ -10,12 +10,21 @@
 </head>
 
 <body>
-   <div class="panel" style="margin-top:1.5em;">
+   <!-- Navigation bar will be injected by JS -->
+
+   <!-- Error Panel -->
+   <div id="error-panel" class="panel" style="display:none; margin-top:1.5em;">
+      <h2>Error</h2>
+      <p>Could not find the requested song. Please check the link or return to the index.</p>
+   </div>
+
+   <!-- Edit Panel -->
+   <div id="edit-panel" class="panel" style="display:none; margin-top:1.5em;">
       <h2>OffChorus – Song Entry</h2>
-      <div style="display:flex; gap:0.7em; margin-bottom:1em;">
-         <input id="title" type="text" placeholder="Song Title" style="width:50%;">
-         <input id="artist" type="text" placeholder="Artist" style="width:30%;">
-         <input id="submitter" type="text" placeholder="Submitter" style="width:20%;">
+      <div style="display:flex; gap:0.7em; margin-bottom:1em; flex-wrap:wrap;">
+         <input id="title" type="text" placeholder="Song Title" style="flex:2 1 10em;">
+         <input id="artist" type="text" placeholder="Artist" style="flex:1 1 7em;">
+         <input id="submitter" type="text" placeholder="Submitter" style="flex:1 1 7em;">
       </div>
       <textarea id="lyrics" rows="7" placeholder="Use ~Chord~word and | for bars"></textarea>
       <div class="live-preview-label">Live Preview:</div>
@@ -24,11 +33,18 @@
       <button id="submit-btn" onclick="submitSong()">Submit</button>
       <button id="update-btn" style="display:none;" onclick="updateSong()">Update</button>
    </div>
-   <div class="panel">
-      <h3>Saved Songs</h3>
-      <div id="songs"></div>
+
+   <!-- View Panel -->
+   <div id="view-panel" class="panel" style="display:none; margin-top:1.5em;">
+      <h2 id="view-title">...</h2>
+      <div id="view-metadata" style="margin-bottom: 0.5em; font-size: 0.9em; color: var(--subtext);"></div>
+      <div id="rendered-song" class="score-preview" style="white-space:pre-wrap;"></div>
    </div>
+
+   <!-- Prompt Modal -->
    <div id="prompt-modal" style="display:none;"></div>
+
+   <!-- Scripts -->
    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
    <script src="common.js"></script>
    <script src="song.js"></script>
