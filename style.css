@@ -28,15 +28,14 @@ h3 {
 }
 
 .options-bar {
-   background: var(--panel);
-   color: var(--text);
-   padding: 0.7em 1.2em;
-   border-bottom: 1px solid var(--border);
-   margin-bottom: 1em;
    display: flex;
    align-items: center;
+   justify-content: center; /* This enables centring */
    gap: 2em;
-   font-size: 1em;
+   padding: 0.7em 1.2em;
+   margin-bottom: 1em;
+   border-bottom: 1px solid var(--border);
+   background: var(--panel);
 }
 
 .options-bar label {

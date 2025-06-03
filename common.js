@@ -1,10 +1,9 @@
 // common.js
 
-// --- Global Config ---
+// --- Supabase global config ---
 const SUPABASE_URL = 'https://kktkzkypfeqipdmchowc.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrdGt6a3lwZmVxaXBkbWNob3djIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4MDE3MDMsImV4cCI6MjA2NDM3NzcwM30.wmpwoFgEWfHNYJJlH2nQxJxY0MhOa_FuKVSZi4KS3Yw';
-
-// --- Supabase Init ---
+// --- Supabase init ---
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // --- Utilities ---
@@ -47,3 +46,58 @@ window.OffChorus = {
    replaceTimeSignatures,
    stripCodes
 };
+
+/**
+ * Injects a flexible top navigation bar.
+ * - Left: "« Index" (only on song page)
+ * - Center: Submit, Feedback, Preferences (always centered)
+ *
+ * @param {boolean} includeIndexLink - Set true on song page to include Index button
+ */
+function insertNavBar(includeIndexLink = false) {
+   const bar = document.createElement('div');
+   bar.className = 'options-bar';
+
+   // --- Left-aligned container (Index or empty spacer) ---
+   const leftZone = document.createElement('div');
+   leftZone.style.flex = '1';
+   if (includeIndexLink) {
+      const indexLink = document.createElement('a');
+      indexLink.href = 'index.html';
+      indexLink.textContent = '« Index';
+      indexLink.className = 'button-link';
+      leftZone.appendChild(indexLink);
+   }
+   bar.appendChild(leftZone);
+
+   // --- Center-aligned container ---
+   const centerZone = document.createElement('div');
+   centerZone.style.display = 'flex';
+   centerZone.style.gap = '2em';
+   centerZone.style.justifyContent = 'center';
+   centerZone.style.alignItems = 'center';
+   centerZone.style.flex = '0 1 auto';
+
+   const buttons = [
+      { text: '+ Submit new song', href: 'song.html' },
+      { text: 'Feedback', href: 'feedback.html' },
+      { text: 'Preferences', href: 'preferences.html' }
+   ];
+
+   for (const { text, href } of buttons) {
+      const link = document.createElement('a');
+      link.href = href;
+      link.textContent = text;
+      link.className = 'button-link';
+      centerZone.appendChild(link);
+   }
+
+   bar.appendChild(centerZone);
+
+   // --- Right zone: flexible empty space to balance layout ---
+   const rightZone = document.createElement('div');
+   rightZone.style.flex = '1';
+   bar.appendChild(rightZone);
+
+   document.body.prepend(bar);
+}

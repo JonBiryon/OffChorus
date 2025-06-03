@@ -1,4 +1,7 @@
-// library.js – controls song listing on index.html
+// index.js
+
+// --- Initiate overhead navigation bar ---
+insertNavBar(false); // false = skip the Index button
 
 // --- DOM elements ---
 const titleFilter = document.getElementById('filter-title');
